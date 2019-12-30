@@ -1,0 +1,29 @@
+{
+  "name": "node-symspell",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "lab -l -m 0",
+    "test-cov": "lab -l -t 90 -m 0 -r html -o coverage.html",
+    "lint": "eslint '**/*.js' --ignore-pattern node_modules/",
+    "lint-fix": "eslint '**/*.js' --ignore-pattern node_modules/ --fix"
+  },
+  "engines": {
+    "node": "12.x",
+    "npm": "6.5.x"
+  },
+  "dependencies": {
+    "difflib": "0.2.x",
+    "iter-tools": "^6.2.6"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.0.1",
+    "@hapi/code": "^5.2.0",
+    "eslint": "^5.9.0",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-import": "^2.19.1",
+    "eslint-plugin-node": "^8.0.0",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "@hapi/lab": "^20.4.0"
+  }
+}
