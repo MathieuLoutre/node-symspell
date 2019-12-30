@@ -12,7 +12,7 @@ This library uses the `iter-tools` and `difflib` modules which are Javascript po
 ## Basic Example
 
 ```js
-const SymSpell = require('node-symspell)
+const SymSpell = require('node-symspell')
 
 const maxEditDistance = 2
 const prefixLength = 7
