@@ -7,23 +7,19 @@
     "lint": "eslint '**/*.js' --ignore-pattern node_modules/",
     "lint-fix": "eslint '**/*.js' --ignore-pattern node_modules/ --fix"
   },
+  "type": "module",
   "engines": {
-    "node": "12.x",
-    "npm": "6.5.x"
+    "node": ">=22.0.0",
+    "npm": ">=9.0.0"
   },
   "dependencies": {
-    "difflib": "0.2.x",
-    "iter-tools": "^6.2.6"
+    "difflib": "^0.2.4",
+    "iter-tools": "^7.5.3"
   },
   "devDependencies": {
-    "babel-eslint": "^10.0.1",
-    "@hapi/code": "^5.2.0",
-    "eslint": "^5.9.0",
-    "eslint-config-standard": "^14.1.0",
-    "eslint-plugin-import": "^2.19.1",
-    "eslint-plugin-node": "^8.0.0",
-    "eslint-plugin-promise": "^4.0.1",
-    "eslint-plugin-standard": "^4.0.0",
-    "@hapi/lab": "^20.4.0"
+    "@eslint/js": "^9.11.1",
+    "@hapi/code": "^8.0.0",
+    "@hapi/lab": "^25.0.0",
+    "eslint": "^9.11.1"
   }
 }

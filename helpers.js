@@ -1,9 +1,9 @@
-const difflib = require('difflib')
-const itertools = require('iter-tools')
+import { SequenceMatcher } from 'difflib'
+import { zip,zipAll } from 'iter-tools'
 
-const { zip, zipLongest } = itertools
+//const { zip, zipAll } = itertools
 
-const isAcronym = (word) => {
+export const isAcronym = (word) => {
 	// """Checks is the word is all caps (acronym) and/or contain numbers
 	// Parameters
 	// ----------
@@ -20,7 +20,7 @@ const isAcronym = (word) => {
 	return word.match(/\b[A-Z0-9]{2,}\b/)
 }
 
-const parseWordsCase = (phrase, preserveCase) => {
+export const parseWordsCase = (phrase, preserveCase) => {
 	// """Create a non-unique wordlist from sample text. Language
 	// independent (e.g. works with Chinese characters)
 	// Parameters
@@ -45,7 +45,7 @@ const parseWordsCase = (phrase, preserveCase) => {
 	return Array.from(phrase.matchAll(/([^\W_]+['’]*[^\W_]*)/g), (m) => m[0])
 }
 
-const transferCasingMatching = (textWithCasing, textWithoutCasing) => {
+export const transferCasingMatching = (textWithCasing, textWithoutCasing) => {
 	// """Transferring the casing from one text to another - assuming that
 	// they are 'matching' texts, alias they have the same length.
 	// Parameters
@@ -70,7 +70,7 @@ const transferCasingMatching = (textWithCasing, textWithoutCasing) => {
 	}).join('')
 }
 
-const transferCasingSimilar = (textWithCasing, textWithoutCasing) => {
+export const transferCasingSimilar = (textWithCasing, textWithoutCasing) => {
 	// Transferring the casing from one text to another - for similar (not matching) text
 	// 1. It will use `difflib`'s `SequenceMatcher` to identify the
 	//    different type of changes needed to turn `textWithCasing` into
@@ -107,7 +107,7 @@ const transferCasingSimilar = (textWithCasing, textWithoutCasing) => {
 	//     If `textWithCasing` is empty
 	// """
 
-	const _sm = new difflib.SequenceMatcher(null, textWithCasing.toLowerCase(), textWithoutCasing)
+	const _sm = new SequenceMatcher(null, textWithCasing.toLowerCase(), textWithoutCasing)
 
 	// we will collect the case_text:
 	let c = ''
@@ -167,7 +167,7 @@ const transferCasingSimilar = (textWithCasing, textWithoutCasing) => {
 				// sequence
 				let _last = 'lower'
 
-				for (const [w, wo] of zipLongest(_withCasing, _withoutCasing)) {
+				for (const [w, wo] of zipAll(_withCasing, _withoutCasing)) {
 					if (w && wo) {
 						if (w === w.toUpperCase()) {
 							c += wo.toUpperCase()
@@ -198,7 +198,7 @@ const transferCasingSimilar = (textWithCasing, textWithoutCasing) => {
 
 /// <summary>Determines the proper return value of an edit distance function when one or
 /// both strings are null.</summary>
-const nullDistanceResults = (string1, string2, maxDistance) => {
+export const nullDistanceResults = (string1, string2, maxDistance) => {
 	if (string1 === null) {
 		return string2 === null ? 0 : (string2.length <= maxDistance) ? string2.length : -1
 	}
@@ -209,7 +209,7 @@ const nullDistanceResults = (string1, string2, maxDistance) => {
 /// <summary>Calculates starting position and lengths of two strings such that common
 /// prefix and suffix substrings are excluded.</summary>
 /// <remarks>Expects string1.length to be less than or equal to string2.length</remarks>
-const prefixSuffixPrep = (string1, string2) => {
+export const prefixSuffixPrep = (string1, string2) => {
 	let len2 = string2.length
 	let len1 = string1.length // this is also the minimun length of the two strings
 
@@ -233,7 +233,47 @@ const prefixSuffixPrep = (string1, string2) => {
 	return { len1, len2, start }
 }
 
-module.exports = {
+
+// permutations.js
+export function permutations(arr) {
+	const results = [];
+	
+	if (arr.length === 0) return [];
+	if (arr.length === 1) return [arr];
+	
+	for (let i = 0; i < arr.length; i++) {
+	  const current = arr[i];
+	  const remaining = arr.slice(0, i).concat(arr.slice(i + 1));
+	  const remainingPerms = permutations(remaining);
+	  
+	  for (let perm of remainingPerms) {
+		results.push([current, ...perm]);
+	  }
+	}
+	
+	return results;
+  }
+
+  // combinations.js
+export function combinations(arr, length) {
+	const results = [];
+	
+	function combine(start, combo) {
+	  if (combo.length === length) {
+		results.push(combo);
+		return;
+	  }
+	  
+	  for (let i = start; i < arr.length; i++) {
+		combine(i + 1, combo.concat(arr[i]));
+	  }
+	}
+	
+	combine(0, []);
+	return results;
+  }
+  
+export default {
 	isAcronym,
 	parseWordsCase,
 	transferCasingMatching,

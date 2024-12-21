@@ -1,4 +1,4 @@
-const Helpers = require('./helpers')
+import { nullDistanceResults, prefixSuffixPrep } from './helpers.js'
 
 /// <summary>
 /// Class providing optimized methods for computing Damerau-Levenshtein Optimal String
@@ -52,7 +52,7 @@ class EditDistance {
 	/// difference between the strings increases.</returns>
 	distance (string1 = null, string2 = null, maxDistance) {
 		if (string1 === null || string2 === null) {
-			return Helpers.nullDistanceResults(string1, string2, maxDistance)
+			return nullDistanceResults(string1, string2, maxDistance)
 		}
 
 		if (maxDistance <= 0) {
@@ -74,7 +74,7 @@ class EditDistance {
 		}
 
 		// identify common suffix and/or prefix that can be ignored
-		const { len1, len2, start } = Helpers.prefixSuffixPrep(string1, string2)
+		const { len1, len2, start } = prefixSuffixPrep(string1, string2)
 
 		if (len1 === 0) {
 			return (len2 <= iMaxDistance) ? len2 : -1
@@ -224,4 +224,4 @@ class EditDistance {
 	}
 }
 
-module.exports = EditDistance
+export default EditDistance

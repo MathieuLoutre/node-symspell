@@ -1,7 +1,7 @@
-const fs = require('fs')
-const readline = require('readline')
-const EditDistance = require('./edit-distance')
-const Helpers = require('./helpers')
+import { createReadStream } from 'fs'
+import { createInterface } from 'readline'
+import EditDistance from './edit-distance.js'
+import { transferCasingSimilar, parseWordsCase, isAcronym } from './helpers.js'
 
 // Spelling suggestion returned from Lookup.
 class SuggestItem {
@@ -9,7 +9,7 @@ class SuggestItem {
 	// term: The suggested word.
 	// distance: Edit distance from search word.
 	// count: Frequency of suggestion in dictionary.
-	constructor (term = '', distance = 0, count = 0) {
+	constructor(term = '', distance = 0, count = 0) {
 		// The suggested correctly spelled word.
 		this.term = term
 		// Edit distance between searched for word and suggestion.
@@ -18,7 +18,7 @@ class SuggestItem {
 		this.count = count
 	}
 
-	compareTo (other) {
+	compareTo(other) {
 		// order by distance ascending, then by frequency count descending
 		if (this.distance === other.distance) {
 			return this.count - other.count
@@ -28,15 +28,20 @@ class SuggestItem {
 	}
 }
 
+export const Verbosity = {
+	TOP: 0,
+	CLOSEST: 1,
+	ALL: 2
+}
 class SymSpell {
 	// number of all words in the corpus used to generate the frequency dictionary
 	// this is used to calculate the word occurrence probability p from word counts c : p=c/N
 	// N equals the sum of all counts c in the dictionary only if the dictionary is complete, but not if the dictionary is truncated or filtered
-	static get N () {
+	static get N() {
 		return 1024908267229
 	}
 
-	static get Verbosity () {
+	static get Verbosity() {
 		// verbosity=Top: the suggestion with the highest term frequency of the suggestions of smallest edit distance found
 		// verbosity=Closest: all suggestions of smallest edit distance found, the suggestions are ordered by term frequency
 		// verbosity=All: all suggestions <= maxEditDistance, the suggestions are ordered by edit distance, then by term frequency (slower, no early termination)
@@ -47,7 +52,7 @@ class SymSpell {
 		}
 	}
 
-	constructor (
+	constructor(
 		maxDictionaryEditDistance = 2,
 		prefixLength = 7,
 		countThreshold = 1
@@ -73,7 +78,7 @@ class SymSpell {
 	// count: The frequency count for word.
 	// staging: Optional staging object to speed up adding many entries by staging them to a temporary structure.
 	// returns -> True if the word was added as a new correctly spelled word, or false if the word is added as a below threshold word, or updates an existing correctly spelled word.
-	createDictionaryEntry (key, count) {
+	createDictionaryEntry(key, count) {
 		if (count <= 0) {
 			if (this.countThreshold > 0) return false // no point doing anything if count is zero, as it can't change anything
 			count = 0
@@ -147,9 +152,9 @@ class SymSpell {
 	// countIndex: The column position of the frequency count.
 	// separator: Separator characters between term(s) and count.
 	// returns ->True if file loaded, or false if file not found.
-	async loadBigramDictionary (dictFile, termIndex, countIndex, separator = ' ') {
-		const lines = readline.createInterface({
-			input: fs.createReadStream(dictFile, 'utf8'),
+	async loadBigramDictionary(dictFile, termIndex, countIndex, separator = ' ') {
+		const lines = createInterface({
+			input: createReadStream(dictFile, 'utf8'),
 			output: process.stdout,
 			terminal: false
 		})
@@ -181,9 +186,9 @@ class SymSpell {
 	// countIndex: The column position of the frequency count.
 	// separator: Separator characters between term(s) and count.
 	// returns ->True if file loaded, or false if file not found.
-	async loadDictionary (dictFile, termIndex, countIndex, separator = ' ') {
-		const lines = readline.createInterface({
-			input: fs.createReadStream(dictFile, 'utf8'),
+	async loadDictionary(dictFile, termIndex, countIndex, separator = ' ') {
+		const lines = createInterface({
+			input: createReadStream(dictFile, 'utf8'),
 			output: process.stdout,
 			terminal: false
 		})
@@ -205,9 +210,9 @@ class SymSpell {
 	// Merges with any dictionary data already loaded.
 	// corpus: The path+filename of the file.
 	// returns ->True if file loaded, or false if file not found.
-	async createDictionary (dictFile) {
-		const lines = readline.createInterface({
-			input: fs.createReadStream(dictFile, 'utf8'),
+	async createDictionary(dictFile) {
+		const lines = createInterface({
+			input: createReadStream(dictFile, 'utf8'),
 			output: process.stdout,
 			terminal: false
 		})
@@ -228,7 +233,7 @@ class SymSpell {
 	// includeUnknown: Include input word in suggestions, if no words within edit distance found.
 	// returns ->A List of SuggestItem object representing suggested correct spellings for the input word,
 	// sorted by edit distance, and secondarily by count frequency.
-	lookup (input, verbosity, maxEditDistance = null, { includeUnknown, ignoreToken, transferCasing } = {}) {
+	lookup(input, verbosity, maxEditDistance = null, { includeUnknown, ignoreToken, transferCasing } = {}) {
 		// maxEditDistance used in Lookup can't be bigger than the maxDictionaryEditDistance
 		// used to construct the underlying dictionary structure.
 		if (maxEditDistance === null) {
@@ -390,14 +395,14 @@ class SymSpell {
 								min > 1 &&
 								input.substr(inputLen + 1 - min) !== suggestion.substr(suggestionLen + 1 - min)
 							) ||
-							(
-								min > 0 &&
-								input[inputLen - min] !== suggestion[suggestionLen - min] &&
 								(
-									input[inputLen - min - 1] !== suggestion[suggestionLen - min] ||
-									input[inputLen - min] !== suggestion[suggestionLen - min - 1]
-								)
-							))
+									min > 0 &&
+									input[inputLen - min] !== suggestion[suggestionLen - min] &&
+									(
+										input[inputLen - min - 1] !== suggestion[suggestionLen - min] ||
+										input[inputLen - min] !== suggestion[suggestionLen - min - 1]
+									)
+								))
 						) {
 							continue
 						}
@@ -430,23 +435,23 @@ class SymSpell {
 
 						if (suggestions.length > 0) {
 							switch (verbosity) {
-							case SymSpell.Verbosity.CLOSEST: {
-								// we will calculate DamLev distance only to the smallest found distance so far
-								if (distance < maxEditDistance2) {
-									suggestions = []
+								case SymSpell.Verbosity.CLOSEST: {
+									// we will calculate DamLev distance only to the smallest found distance so far
+									if (distance < maxEditDistance2) {
+										suggestions = []
+									}
+
+									break
 								}
 
-								break
-							}
+								case SymSpell.Verbosity.TOP: {
+									if (distance < maxEditDistance2 || suggestionCount > suggestions[0].count) {
+										maxEditDistance2 = distance
+										suggestions[0] = si
+									}
 
-							case SymSpell.Verbosity.TOP: {
-								if (distance < maxEditDistance2 || suggestionCount > suggestions[0].count) {
-									maxEditDistance2 = distance
-									suggestions[0] = si
+									continue
 								}
-
-								continue
-							}
 							}
 						}
 
@@ -487,7 +492,7 @@ class SymSpell {
 
 		if (transferCasing) {
 			suggestions = suggestions.map((s) => {
-				return new SuggestItem(Helpers.transferCasingSimilar(originalPhrase, s.term), s.distance, s.count)
+				return new SuggestItem(transferCasingSimilar(originalPhrase, s.term), s.distance, s.count)
 			})
 		}
 
@@ -495,7 +500,7 @@ class SymSpell {
 	}
 
 	// check whether all delete chars are present in the suggestion prefix in correct order, otherwise this is just a hash collision
-	deleteInSuggestionPrefix (del, deleteLen, suggestion, suggestionLen) {
+	deleteInSuggestionPrefix(del, deleteLen, suggestion, suggestionLen) {
 		if (deleteLen === 0) {
 			return true
 		}
@@ -523,7 +528,7 @@ class SymSpell {
 
 	// create a non-unique wordlist from sample text
 	// language independent (e.g. works with Chinese characters)
-	parseWords (text) {
+	parseWords(text) {
 		// \w Alphanumeric characters (including non-latin characters, umlaut characters and digits) plus "_"
 		// \d Digits
 		// Compatible with non-latin characters, does not split words at apostrophes
@@ -534,7 +539,7 @@ class SymSpell {
 
 	// inexpensive and language independent: only deletes, no transposes + replaces + inserts
 	// replaces and inserts are expensive and language dependent (Chinese has 70,000 Unicode Han characters)
-	edits (word, editDistance, deleteWords) {
+	edits(word, editDistance, deleteWords) {
 		editDistance++
 
 		if (word.length > 1) {
@@ -555,7 +560,7 @@ class SymSpell {
 		return deleteWords
 	}
 
-	editsPrefix (key) {
+	editsPrefix(key) {
 		const hashSet = new Set()
 
 		if (key.length <= this.maxDictionaryEditDistance) {
@@ -582,17 +587,17 @@ class SymSpell {
 	// input: The string being spell checked.
 	// maxEditDistance: The maximum edit distance between input and suggested words.
 	// returns ->A List of SuggestItem object representing suggested correct spellings for the input string.
-	lookupCompound (input, maxEditDistance = null, { ignoreNonWords, transferCasing } = {}) {
+	lookupCompound(input, maxEditDistance = null, { ignoreNonWords, transferCasing } = {}) {
 		if (maxEditDistance === null) {
 			maxEditDistance = this.maxDictionaryEditDistance
 		}
 
 		// parse input string into single terms
-		const termList1 = Helpers.parseWordsCase(input)
+		const termList1 = parseWordsCase(input)
 		let termList2 = []
 
 		if (ignoreNonWords) {
-			termList2 = Helpers.parseWordsCase(input, true)
+			termList2 = parseWordsCase(input, true)
 		}
 
 		let suggestions = [] // suggestions for a single term
@@ -609,7 +614,7 @@ class SymSpell {
 					continue
 				}
 
-				if (Helpers.isAcronym(termList2[i])) {
+				if (isAcronym(termList2[i])) {
 					suggestionParts.push(new SuggestItem(termList2[i], 0, 0))
 					continue
 				}
@@ -781,7 +786,7 @@ class SymSpell {
 		suggestion.term = s.trimEnd()
 
 		if (transferCasing) {
-			suggestion.term = Helpers.transferCasingSimilar(input, suggestion.term)
+			suggestion.term = transferCasingSimilar(input, suggestion.term)
 		}
 
 		suggestion.distance = distanceComparer.compare(input, suggestion.term, Number.MAX_SAFE_INTEGER)
@@ -812,7 +817,7 @@ class SymSpell {
 	/// the word segmented and spelling corrected string as correctedString,
 	/// the Edit distance sum between input string and corrected string as distanceSum,
 	/// the Sum of word occurence probabilities in log scale (a measure of how common and probable the corrected segmentation is) as probabilityLogSum.
-	wordSegmentation (input, { maxEditDistance = null, maxSegmentationWordLength = null, ignoreToken } = {}) {
+	wordSegmentation(input, { maxEditDistance = null, maxSegmentationWordLength = null, ignoreToken } = {}) {
 		if (maxEditDistance === null) {
 			maxEditDistance = this.maxDictionaryEditDistance
 		}
@@ -881,7 +886,7 @@ class SymSpell {
 
 				// set values in first loop
 				if (j === 0) {
-					compositions[destinationIndex] = { 
+					compositions[destinationIndex] = {
 						segmentedString: part,
 						correctedString: topResult,
 						distanceSum: topEd,
@@ -889,10 +894,10 @@ class SymSpell {
 					}
 				}
 				else if ((i === maxSegmentationWordLength) ||
-                    // replace values if better probabilityLogSum, if same edit distance OR one space difference
-                    (((compositions[circularIndex].distanceSum + topEd === compositions[destinationIndex].distanceSum) || (compositions[circularIndex].distanceSum + separatorLength + topEd === compositions[destinationIndex].distanceSum)) && (compositions[destinationIndex].probabilityLogSum < compositions[circularIndex].probabilityLogSum + topProbabilityLog)) ||
-                    // replace values if smaller edit distance
-                    (compositions[circularIndex].distanceSum + separatorLength + topEd < compositions[destinationIndex].distanceSum)) {
+					// replace values if better probabilityLogSum, if same edit distance OR one space difference
+					(((compositions[circularIndex].distanceSum + topEd === compositions[destinationIndex].distanceSum) || (compositions[circularIndex].distanceSum + separatorLength + topEd === compositions[destinationIndex].distanceSum)) && (compositions[destinationIndex].probabilityLogSum < compositions[circularIndex].probabilityLogSum + topProbabilityLog)) ||
+					// replace values if smaller edit distance
+					(compositions[circularIndex].distanceSum + separatorLength + topEd < compositions[destinationIndex].distanceSum)) {
 					compositions[destinationIndex] = {
 						segmentedString: (compositions[circularIndex].segmentedString || '') + ' ' + part,
 						correctedString: (compositions[circularIndex].correctedString || '') + ' ' + topResult,
@@ -913,4 +918,4 @@ class SymSpell {
 	}
 }
 
-module.exports = SymSpell
+export default SymSpell

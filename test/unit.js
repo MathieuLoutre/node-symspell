@@ -1,16 +1,18 @@
-const fs = require('fs')
-const readline = require('readline')
-const itertools = require('iter-tools')
+import { createReadStream } from 'fs'
+import { createInterface } from 'readline'
 
-const Code = require('@hapi/code')
-const Lab = require('@hapi/lab')
-const SymSpell = require('../index')
-const Helpers = require('../helpers')
-const EditDistance = require('../edit-distance')
+import Code from '@hapi/code'
+import { script } from '@hapi/lab'
+import SymSpell, { Verbosity } from '../index.js'
+import { transferCasingMatching, transferCasingSimilar, permutations, combinations } from '../helpers.js'
+import EditDistance from '../edit-distance.js'
 
-const { permutations, combinations } = itertools
 const { expect } = Code
-const { it, experiment, before } = exports.lab = Lab.script()
+
+// Correct usage for ES module export
+export const lab = script()
+
+const { it, experiment, before } = lab
 
 const getTestStrings = () => {
 	const alphabet = 'abcd'
@@ -78,7 +80,7 @@ experiment('symspell', () => {
 		const textWoCasing = 'how is the weather in new york?'
 		const textWoCasingTransferred = 'How is the weather in New York?'
 
-		expect(Helpers.transferCasingMatching(textWCasing, textWoCasing)).to.equal(textWoCasingTransferred)
+		expect(transferCasingMatching(textWCasing, textWoCasing)).to.equal(textWoCasingTransferred)
 	})
 
 	it('testTransferCasingForSimilarText', () => {
@@ -86,7 +88,7 @@ experiment('symspell', () => {
 		const textWoCasing = 'how is the weather in new york?'
 		const textWoCasingTransferred = 'How is the weather in New York?'
 
-		expect(Helpers.transferCasingSimilar(textWCasing, textWoCasing)).to.equal(textWoCasingTransferred)
+		expect(transferCasingSimilar(textWCasing, textWoCasing)).to.equal(textWoCasingTransferred)
 	})
 
 	it('testDamerauOsaMatchRefMax0', () => {
@@ -217,7 +219,7 @@ experiment('symspell', () => {
 		symSpell.createDictionaryEntry('pipe', 5)
 		symSpell.createDictionaryEntry('pips', 10)
 
-		let result = symSpell.lookup('pipe', SymSpell.Verbosity.ALL, 1)
+		let result = symSpell.lookup('pipe', Verbosity.ALL, 1)
 
 		expect(result.length).to.equal(2)
 		expect(result[0].term).to.equal('pipe')
@@ -225,7 +227,7 @@ experiment('symspell', () => {
 		expect(result[1].term).to.equal('pips')
 		expect(result[1].count).to.equal(10)
 
-		result = symSpell.lookup('pips', SymSpell.Verbosity.ALL, 1)
+		result = symSpell.lookup('pips', Verbosity.ALL, 1)
 
 		expect(result.length).to.equal(2)
 		expect(result[0].term).to.equal('pips')
@@ -233,7 +235,7 @@ experiment('symspell', () => {
 		expect(result[1].term).to.equal('pipe')
 		expect(result[1].count).to.equal(5)
 
-		result = symSpell.lookup('pip', SymSpell.Verbosity.ALL, 1)
+		result = symSpell.lookup('pip', Verbosity.ALL, 1)
 
 		expect(result.length).to.equal(2)
 		expect(result[0].term).to.equal('pips')
@@ -255,13 +257,13 @@ experiment('symspell', () => {
 		const symSpell = new SymSpell()
 		const word = 'hello'
 		symSpell.createDictionaryEntry(word, 11)
-		let result = symSpell.lookup(word, SymSpell.Verbosity.TOP)
+		let result = symSpell.lookup(word, Verbosity.TOP)
 
 		let count = 0
 		if (result.length === 1) count = result[0].count
 		expect(11, count)
 		symSpell.createDictionaryEntry(word, 3)
-		result = symSpell.lookup(word, SymSpell.Verbosity.TOP)
+		result = symSpell.lookup(word, Verbosity.TOP)
 
 		count = 0
 		if (result.length === 1) count = result[0].count
@@ -272,13 +274,13 @@ experiment('symspell', () => {
 		const symSpell = new SymSpell()
 		const word = 'hello'
 		symSpell.createDictionaryEntry(word, Number.maxSafeInteger - 10)
-		let result = symSpell.lookup(word, SymSpell.Verbosity.TOP)
+		let result = symSpell.lookup(word, Verbosity.TOP)
 
 		let count = 0
 		if (result.length === 1) count = result[0].count
 		expect(Number.maxSafeInteger - 10, count)
 		symSpell.createDictionaryEntry(word, 11)
-		result = symSpell.lookup(word, SymSpell.Verbosity.TOP)
+		result = symSpell.lookup(word, Verbosity.TOP)
 
 		count = 0
 		if (result.length === 1) count = result[0].count
@@ -291,13 +293,13 @@ experiment('symspell', () => {
 		symSpell.createDictionaryEntry('steams', 2)
 		symSpell.createDictionaryEntry('steem', 3)
 
-		let result = symSpell.lookup('steems', SymSpell.Verbosity.TOP, 2)
+		let result = symSpell.lookup('steems', Verbosity.TOP, 2)
 
 		expect(result.length).to.equal(1)
-		result = symSpell.lookup('steems', SymSpell.Verbosity.CLOSEST, 2)
+		result = symSpell.lookup('steems', Verbosity.CLOSEST, 2)
 
 		expect(result.length).to.equal(2)
-		result = symSpell.lookup('steems', SymSpell.Verbosity.ALL, 2)
+		result = symSpell.lookup('steems', Verbosity.ALL, 2)
 
 		expect(result.length).to.equal(3)
 	})
@@ -307,7 +309,7 @@ experiment('symspell', () => {
 		symSpell.createDictionaryEntry('steama', 4)
 		symSpell.createDictionaryEntry('steamb', 6)
 		symSpell.createDictionaryEntry('steamc', 2)
-		const result = symSpell.lookup('steam', SymSpell.Verbosity.TOP, 2)
+		const result = symSpell.lookup('steam', Verbosity.TOP, 2)
 
 		expect(result.length).to.equal(1)
 		expect(result[0].term).to.equal('steamb')
@@ -319,7 +321,7 @@ experiment('symspell', () => {
 		symSpell.createDictionaryEntry('steama', 4)
 		symSpell.createDictionaryEntry('steamb', 6)
 		symSpell.createDictionaryEntry('steamc', 2)
-		const result = symSpell.lookup('steama', SymSpell.Verbosity.TOP, 2)
+		const result = symSpell.lookup('steama', Verbosity.TOP, 2)
 
 		expect(result.length).to.equal(1)
 		expect(result[0].term).to.equal('steama')
@@ -328,9 +330,9 @@ experiment('symspell', () => {
 	it('LookupShouldNotReturnNonWordDelete', () => {
 		const symSpell = new SymSpell(2, 7, 10)
 		symSpell.createDictionaryEntry('pawn', 10)
-		let result = symSpell.lookup('paw', SymSpell.Verbosity.TOP, 0)
+		let result = symSpell.lookup('paw', Verbosity.TOP, 0)
 
-		result = symSpell.lookup('awn', SymSpell.Verbosity.TOP, 0)
+		result = symSpell.lookup('awn', Verbosity.TOP, 0)
 
 		expect(result.length).to.equal(0)
 	})
@@ -338,7 +340,7 @@ experiment('symspell', () => {
 	it('LookupShouldNotReturnLowCountWord', () => {
 		const symSpell = new SymSpell(2, 7, 10)
 		symSpell.createDictionaryEntry('pawn', 1)
-		const result = symSpell.lookup('pawn', SymSpell.Verbosity.TOP, 0)
+		const result = symSpell.lookup('pawn', Verbosity.TOP, 0)
 
 		expect(result.length).to.equal(0)
 	})
@@ -347,7 +349,7 @@ experiment('symspell', () => {
 		const symSpell = new SymSpell(2, 7, 10)
 		symSpell.createDictionaryEntry('flame', 20)
 		symSpell.createDictionaryEntry('flam', 1)
-		const result = symSpell.lookup('flam', SymSpell.Verbosity.TOP, 0)
+		const result = symSpell.lookup('flam', Verbosity.TOP, 0)
 
 		expect(result.length).to.equal(0)
 	})
@@ -355,15 +357,15 @@ experiment('symspell', () => {
 	it('LookupShouldReplicateNoisyResults', async () => {
 		const maxEditDistance = 2
 		const prefixLength = 7
-		const verbosity = SymSpell.Verbosity.CLOSEST
+		const verbosity = Verbosity.CLOSEST
 		const symSpell = new SymSpell(maxEditDistance, prefixLength)
 
 		await symSpell.loadDictionary(dictionaryPath, 0, 1)
 
 		// load 1000 terms with random spelling errors
 		const testList = []
-		const lines = readline.createInterface({
-			input: fs.createReadStream('./test/data/noisy_query_en_1000.txt', 'utf8'),
+		const lines = createInterface({
+			input: createReadStream('./test/data/noisy_query_en_1000.txt', 'utf8'),
 			output: process.stdout,
 			terminal: false
 		})
@@ -635,7 +637,7 @@ experiment('symspell', () => {
 		const symSpell = new SymSpell(maxEditDistance, prefixLength)
 		await symSpell.loadDictionary(dictPath, 0, 1)
 
-		const result = symSpell.lookup('АБ', SymSpell.Verbosity.TOP, 2)
+		const result = symSpell.lookup('АБ', Verbosity.TOP, 2)
 		expect(result.length).to.equal(1)
 		expect(result[0].term).to.equal('АБИ')
 	})
@@ -649,8 +651,8 @@ experiment('symspell', () => {
 		const symSpell = new SymSpell(maxEditDistance, prefixLength)
 		await symSpell.createDictionary(corpusPath)
 
-		const lines = readline.createInterface({
-			input: fs.createReadStream(bigWordsPath, 'utf8'),
+		const lines = createInterface({
+			input: createReadStream(bigWordsPath, 'utf8'),
 			output: process.stdout,
 			terminal: false
 		})
@@ -669,17 +671,17 @@ experiment('symspell', () => {
 	it('testLookupTransferCasing', () => {
 		let symSpell = new SymSpell()
 		symSpell.createDictionaryEntry('steam', 4)
-		let result = symSpell.lookup('Stream', SymSpell.Verbosity.TOP, 2, { transferCasing: true })
+		let result = symSpell.lookup('Stream', Verbosity.TOP, 2, { transferCasing: true })
 		expect(result[0].term).to.equal('Steam')
 
 		symSpell = new SymSpell()
 		symSpell.createDictionaryEntry('steam', 4)
-		result = symSpell.lookup('StreaM', SymSpell.Verbosity.TOP, 2, { transferCasing: true })
+		result = symSpell.lookup('StreaM', Verbosity.TOP, 2, { transferCasing: true })
 		expect(result[0].term).to.equal('SteaM')
 
 		symSpell = new SymSpell()
 		symSpell.createDictionaryEntry('steam', 4)
-		result = symSpell.lookup('STREAM', SymSpell.Verbosity.TOP, 2, { transferCasing: true })
+		result = symSpell.lookup('STREAM', Verbosity.TOP, 2, { transferCasing: true })
 		expect(result[0].term).to.equal('STEAM')
 	})
 
